@@ -15,11 +15,14 @@ theme_set(theme_classic())
 options(scipen = 8)
 
 ####Data####
-state_num <- read.table('data/state_codes.txt', header = T, sep = "|", dec = ".") %>%
+state_num <- read.table(here::here("data", "state_codes.txt"), header = T, sep = "|", dec = ".") %>%
   mutate(STATE = ifelse(STATE < 10, as.character(paste0('0',STATE)),
                         as.character(STATE)))
 
-all_data <- read_csv('output/EPATADA_Original_data_with_flags_tags.csv') %>%
+check <- problems(read_csv(here::here("output", "EPATADA_Original_data_with_flags_tags.csv")))
+# looks like t/f expected but getting string (text and url) for some entries
+
+all_data <- read_csv(here::here("output", "EPATADA_Original_data_with_flags_tags.csv")) %>%
   left_join(state_num, by = c('StateCode' = 'STATE')) %>%
   mutate(TADA.ResultMeasure.MeasureUnitCode = ifelse(TADA.ResultMeasure.MeasureUnitCode == 'NG/ML',
                                                      'UG/L', TADA.ResultMeasure.MeasureUnitCode),
@@ -57,7 +60,7 @@ summary(all_data$TADA.DetectionQuantitationLimitMeasure.MeasureValue)
 summary(all_data$TADA.DetectionQuantitationLimitMeasure.MeasureValue[all_data$TADA.CensoredData.Flag == "Non-Detect"])
 summary(as.factor(all_data$TADA.CensoredData.Flag))
 
-filtered_data <- read_csv('output/EPATADA_priority_filtered_data.csv') %>%
+filtered_data <- read_csv(here::here("output", "EPATADA_priority_filtered_data.csv")) %>%
   mutate(StateCode = as.character(StateCode)) %>%
   left_join(state_num, by = c('StateCode' = 'STATE')) %>%
   mutate(Abbrev.Name = case_when(TADA.CharacteristicName == "PERFLUOROOCTANOIC ACID" ~ "PFOA",
@@ -66,7 +69,7 @@ filtered_data <- read_csv('output/EPATADA_priority_filtered_data.csv') %>%
                                  TADA.CharacteristicName == "PERFLUOROOCTANESULFONATE" ~ "PFOS",
                                  TADA.CharacteristicName == "PERFLUOROOCTANE SULFONIC ACID" ~ "PFOS"))
 
-states <- st_read('data/cb_2018_us_state_500k/cb_2018_us_state_500k.shp') %>%
+states <- st_read(here::here("data", "cb_2018_us_state_500k/cb_2018_us_state_500k.shp")) %>%
   filter(!STATEFP %in% c('60', '66', '69', '78',
                          '15', '02'))
 
@@ -100,7 +103,7 @@ data_summary_surfacewater <- filtered_data %>%
 
 sum(data_summary_surfacewater$count)
 
-write_csv(data_summary_surfacewater, 'output/figures/data_summary.csv')
+write_csv(data_summary_surfacewater, here::here("output", "data_summary.csv"))
 
 ####Summaries####
 #####Total Samples by Compound#####
@@ -146,7 +149,7 @@ pfos_exceed <- all_data %>%
 data_summary_surfacewater_exceed <- data_summary_surfacewater %>%
   left_join(exceedance, by = c('Abbrev.Name','sample_lower_than_detection_limit_flag'))
 
-write_csv(data_summary_surfacewater_exceed, 'output/data_summary_surfacewater_exceed.csv')
+write_csv(data_summary_surfacewater_exceed, here::here("output", "data_summary_surfacewater_exceed.csv"))
 
 
 #####Summarize by EPA region#####
@@ -201,7 +204,7 @@ samples_epa_region_flagged <- all_data %>%
   ungroup() %>%
   unique()
 
-write_csv(samples_epa_region_flagged, 'output/figures/samples_epa_region_flagged.csv')
+write_csv(samples_epa_region_flagged, here::here("output", "samples_epa_region_flagged.csv"))
 
 
 #####Nondetects#####
@@ -232,7 +235,8 @@ ggplot(filtered_data,
   theme(legend.position = "top",
         axis.text.x = element_text(angle = 45, hjust = 1, size = 7)) #+
 #guides(color = guide_legend(nrow = 2, byrow = TRUE))
-ggsave('output/figures/nondetect_scatterplot.jpg', 
+
+ggsave(here::here("output", "figures", "nondetect_scatterplot.jpg"), 
        height = 5, width = 8, dpi = 500)
 
 #### nondetect_scatterplot FLIPPED Axis 
@@ -257,7 +261,8 @@ ggplot(filtered_data,
   theme(legend.position = "top",
         axis.text.x = element_text(angle = 45, hjust = 1, size = 7)) #+
 #guides(color = guide_legend(nrow = 2, byrow = TRUE))
-ggsave('output/figures/nondetect_scatterplot_flipped.jpg', 
+
+ggsave(here::here("output", "figures", "nondetect_scatterplot_flipped.jpg"),
        height = 5, width = 8, dpi = 500)
 
 ####Summary Tables####
@@ -269,7 +274,7 @@ table_by_media <- all_data %>%
           n_samples = n()) %>%
   unique()
 
-write_csv(table_by_media, 'output/figures/table_by_media.csv')
+write_csv(table_by_media, here::here("output", "table_by_media.csv"))
 
 #####Summarize by Species#####
 table_by_species <- all_data %>%
@@ -279,7 +284,7 @@ table_by_species <- all_data %>%
           'Number of Sample' = n()) %>%
   unique()
 
-write_csv(table_by_species, 'output/figures/table_by_species.csv')
+write_csv(table_by_species, here::here("output", "table_by_species.csv"))
 
 #### Tables by state 
 
@@ -295,7 +300,7 @@ table_by_species_MN <- MN_data %>%
           'Number of Sample' = n()) %>%
   unique()
 
-write_csv(table_by_species_MN, 'output/figures/table_by_species_MN.csv')
+write_csv(table_by_species_MN, here::here("output", "table_by_species_MN.csv"))
 
 table_by_species_WI <- WI_data %>%
   filter(!is.na(SubjectTaxonomicName)) %>%
@@ -304,7 +309,7 @@ table_by_species_WI <- WI_data %>%
           'Number of Sample' = n()) %>%
   unique()
 
-write_csv(table_by_species_WI, 'output/figures/table_by_species_WI.csv')
+write_csv(table_by_species_WI, here::here("output", "table_by_species_WI.csv"))
 
 #####Summarize by State#####
 table_by_state <- all_data %>%
@@ -324,7 +329,7 @@ table_by_state_flag <- filtered_data %>%
 table_by_state_combo <- table_by_state %>%
   left_join(table_by_state_flag, by = 'STATE_NAME')
 
-write_csv(table_by_state_combo, 'output/figures/table_by_state.csv')
+write_csv(table_by_state_combo, here::here("output", "table_by_state.csv"))
 
 #####Summarize by All#####
 table_by_all <- all_data %>%
@@ -335,7 +340,7 @@ table_by_all <- all_data %>%
   unique() %>%
   arrange(STATE_NAME, ActivityMediaName)
 
-write_csv(table_by_all, 'output/figures/table_by_all.csv')
+write_csv(table_by_all, here::here("output", "table_by_all.csv"))
 
 
 #####Summarize by site by number of PFAS compounds reported & media#####
@@ -360,7 +365,7 @@ all_data_4_plot <- filtered_data %>%
                                              T ~ TADA.CharacteristicName)) %>%
   filter(TADA.ResultMeasure.MeasureUnitCode != 'NONE') %>%
   mutate(TADA.ActivityMediaName = ifelse(TADA.ActivityMediaName == 'WATER', 'SURFACE WATER', TADA.ActivityMediaName))
-options(scipen=10000)
+options(scipen=9999)
 
 ggplot() + 
   geom_boxplot(data = all_data_4_plot, aes(x = Abbrev.Name, 
@@ -376,7 +381,7 @@ ggplot() +
   theme(text = element_text(size = 8),
         strip.background = element_rect(fill="gray99"))
 
-ggsave('output/figures/params_by_media_boxplot.jpg', units = 'in',
+ggsave(here::here("output", "figures", "params_by_media_boxplot.jpg"), units = 'in',
        height = 5, width = 6)
 
 
@@ -397,7 +402,7 @@ ggplot() +
   theme(text = element_text(size = 8),
         strip.background = element_rect(fill="gray99"))
 
-ggsave('output/figures/params_by_media_scatter.jpg', units = 'in',
+ggsave(here::here("output", "figures", "params_by_media_scatter.jpg"), units = 'in',
        height = 5, width = 6)
 
 
@@ -447,7 +452,7 @@ MN_fig <- ggplot(MN_wide, aes(x=WATER, y=TISSUE))+geom_point()+
   )
 MN_fig
 
-ggsave('output/figures/linear_regression_MN.jpg', units = 'in',
+ggsave(here::here("output", "figures", "linear_regression_MN.jpg"), units = 'in',
        height = 5, width = 6)
 
 
@@ -493,19 +498,12 @@ ggplot() +
   theme(text = element_text(size = 8),
         strip.background = element_rect(fill="gray99"))
 
-ggsave('output/figures/params_by_media_boxplot_MN_WI.jpg', units = 'in',
+ggsave(here::here("output", "figures", "params_by_media_boxplot_MN_WI.jpg"), units = 'in',
        height = 5, width = 6)
 
 
 
-
-
-
-
-
-
 #### Box plots for each state
-
 
 MN_box <- MN_data %>%
   mutate(TADA.CharacteristicName = case_when(TADA.CharacteristicName == 'PERFLUOROOCTANESULFONATE' ~
@@ -541,7 +539,7 @@ ggplot() +
   theme(text = element_text(size = 8))+
   ggtitle('Minnesota')
 
-ggsave('output/figures/params_by_media_boxplot_MN.jpg', units = 'in',
+ggsave(here::here("output", "figures", "params_by_media_boxplot_MN.jpg"), units = 'in',
        height = 5, width = 6)
 
 WI_box <- WI_data %>%
@@ -549,7 +547,7 @@ WI_box <- WI_data %>%
                                                'PERFLUOROOCTANE SULFONIC ACID', TADA.CharacteristicName == 'PFOA ION' ~ 'PERFLUOROOCTANOIC ACID',
                                              T ~ TADA.CharacteristicName)) %>%
   filter(TADA.ResultMeasure.MeasureUnitCode != 'NONE')
-options(scipen=10000)
+options(scipen=9999)
 
 
 facet_names <- list(
@@ -578,7 +576,7 @@ ggplot() +
   theme(text = element_text(size = 8))+
   ggtitle('Wisconsin')
 
-ggsave('output/figures/params_by_media_boxplot_WI.jpg', units = 'in',
+ggsave(here::here("output", "figures", "params_by_media_boxplot_WI.jpg"), units = 'in',
        height = 5, width = 6)
 
 # code to generate sample sizes 
@@ -615,7 +613,7 @@ ggplot(all_data,
   theme(legend.position = "top", axis.text.x = element_text(angle = 45, hjust = 1)) 
 
 
-ggsave('output/figures/params_surfacewater_boxplot.jpg',
+ggsave(here::here("output", "figures", "params_surfacewater_boxplot.jpg"),
        height = 4, width = 8, dpi = 500)
 
 all_filt_data_4_plot <- filtered_data %>%
@@ -656,5 +654,5 @@ pie_table <- filt_pie %>%
   rename(State = STATE_NAME,
          `Total Samples` = n_samples_total)
 
-write_csv(pie_table, 'output/figures/samples_by_media_by_state.csv')
+write_csv(pie_table, here::here("output", "samples_by_media_by_state.csv"))
 

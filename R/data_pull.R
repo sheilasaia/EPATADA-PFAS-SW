@@ -14,6 +14,18 @@ library(sf)
 library(ggplot2)
 library(scales)
 library(scatterpie)
+library(here)
+
+# create figures folder
+fig_folder_path <- here::here("output", "figures")
+
+# check if dir exists, if not, create it
+if (!fs::dir_exists(fig_folder_path)) {
+  fs::dir_create(fig_folder_path, recursive = TRUE, showWarnings = FALSE)
+  cat(sprintf("folder '%s' created successfully.\n", fig_folder_path))
+} else {
+  cat(sprintf("folder '%s' already exists.\n", fig_folder_path))
+}
 
 ####Download####
 data <- TADA_DataRetrieval(characteristicName = c('PFOA ion'
@@ -31,14 +43,15 @@ data <- TADA_DataRetrieval(characteristicName = c('PFOA ion'
 
 
 ####Export####
-write_csv(data, 'output/data_pull.csv')
+# write_csv(data, 'output/data_pull.csv')
+write_csv(data, here::here("output", "data_pull.csv"))
 
 ####MAPS####
-state_num <- read.table('data/state_codes.txt', header = T, sep = "|", dec = ".") %>%
+state_num <- read.table(here::here("Data", "state_codes.txt"), header = T, sep = "|", dec = ".") %>%
   mutate(STATE = ifelse(STATE < 10, as.character(paste0('0',STATE)),
                         as.character(STATE)))
 
-states <- st_read('data/cb_2018_us_state_500k/cb_2018_us_state_500k.shp') %>%
+states <- st_read(here::here("Data", "cb_2018_us_state_500k", "cb_2018_us_state_500k.shp")) %>%
   filter(!STATEFP %in% c('60', '66', '69', '78',
                          '15', '02'))
 
@@ -81,8 +94,6 @@ filt_pie2 <- extract(filt_pie, centroid, into = c('Lat', 'Lon'), '\\((.*),(.*)\\
   rename(`All Water` = Water) %>%
   mutate(radius = sqrt(n_samples_total)/25)
 
-
-
 ggplot() +
   geom_sf(data = states, color = 'black', fill = 'gray90') +
   geom_scatterpie(data = as.data.frame(filt_pie2), 
@@ -118,4 +129,4 @@ ggplot() +
                                     4),
                          size = 3)
 
-ggsave('output/figures/scatterpie_map_all_media.jpg', units = 'in', width = 6, height = 6, dpi = 500)
+ggsave(here::here("output", "figures", "scatterpie_map_all_media.jpg"), units = 'in', width = 6, height = 6, dpi = 500)

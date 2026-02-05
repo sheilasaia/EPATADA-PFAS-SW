@@ -13,9 +13,10 @@ library(sf)
 library(ggplot2)
 library(scales)
 library(scatterpie)
+library(here)
 
 ####Data####
-data <- read_csv('output/data_pull.csv') %>%
+data <- read_csv(here::here("output", "data_pull.csv")) %>%
   mutate(Abbrev.Name = case_when(TADA.CharacteristicName == "PERFLUOROOCTANOIC ACID" ~ "PFOA",
                                  TADA.CharacteristicName == "PFOA ION" ~ "PFOA",
                                  TADA.CharacteristicName == "PERFLUOROOCTANESULFONATE (PFOS)" ~ "PFOS",
@@ -28,11 +29,11 @@ data_media_sums <- data %>%
           n = n()) %>%
   unique()
 
-state_num <- read.table('data/state_codes.txt', header = T, sep = "|", dec = ".") %>%
+state_num <- read.table(here::here("data", "state_codes.txt"), header = T, sep = "|", dec = ".") %>%
   mutate(STATE = ifelse(STATE < 10, as.character(paste0('0',STATE)),
                         as.character(STATE)))
 
-states <- st_read('data/cb_2018_us_state_500k/cb_2018_us_state_500k.shp') %>%
+states <- st_read(here::here("Data", "cb_2018_us_state_500k", "cb_2018_us_state_500k.shp")) %>%
   filter(!STATEFP %in% c('60', '66', '69', '78',
                          '15', '02'))
 
@@ -88,8 +89,6 @@ filt_pie2 <- extract(filt_pie, centroid, into = c('Lat', 'Lon'), '\\((.*),(.*)\\
   rename(`Surface Water` = Water) %>%
   mutate(radius = sqrt(n_samples_total)/25)
 
-
-
 ggplot() +
   geom_sf(data = states, color = 'black', fill = 'gray90') +
   geom_scatterpie(data = as.data.frame(filt_pie2), 
@@ -121,7 +120,7 @@ ggplot() +
                          size = 3)
 
 
-ggsave('output/figures/scatterpie_map_water_tissue.jpg', units = 'in', width = 6, height = 6, dpi = 500)
+ggsave(here::here("output", "figures", "scatterpie_map_water_tissue.jpg"), units = 'in', width = 6, height = 6, dpi = 500)
 
 ####Data Processing####
 #####1. Check Result Unit Validity#####
@@ -347,7 +346,7 @@ summary(as.factor(data_18$EPA_method_flag))
 summary(data_18$TADA.DetectionQuantitationLimitMeasure.MeasureValue)
 
 ####Export data with flags####
-write_csv(data_18, 'output/EPATADA_Original_data_with_flags_tags.csv')
+write_csv(data_18, here::here("output", "EPATADA_Original_data_with_flags_tags.csv"))
 
 #Find non-detect detection limit range
 summary(subset(data_18$TADA.DetectionQuantitationLimitMeasure.MeasureValue,
@@ -382,7 +381,7 @@ samples_filtered <- data_18 %>%
   filter(TADA.MeasureQualifierCode.Flag != 'Suspect' | is.na(TADA.MeasureQualifierCode.Flag))
 
 #Export filtered data
-write_csv(samples_filtered, 'output/EPATADA_priority_filtered_data.csv')
+write_csv(samples_filtered, here::here("output", "EPATADA_priority_filtered_data.csv"))
 
 
 ####Filtered Map####
@@ -453,4 +452,4 @@ ggplot() +
                          size = 3)
 
 
-ggsave('output/figures/scatterpie_map_water_tissue_filtered.jpg', units = 'in', width = 6, height = 6, dpi = 500)
+ggsave(here::here("output", "figures", "scatterpie_map_water_tissue_filtered.jpg"), units = 'in', width = 6, height = 6, dpi = 500)
